@@ -5,12 +5,14 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { useOrganization } from "@/components/organization-context";
 import { ApiClient, ApiError } from "@/lib/api";
 import {
   submitReferenceRun,
   pollReferenceRunResult,
   type ReferenceRunResult,
 } from "@/lib/runs/reference";
+import { clearDraft } from "@/lib/runs/draft";
 
 const ids = {
   organization: "organization_00000000-0000-4000-8000-000000000001",
@@ -27,6 +29,7 @@ type SubmitState =
   | "unauthorized";
 
 export default function SubmitRunPage() {
+  const { current: organization } = useOrganization();
   const [idempotencyKey] = useState(() => `reviewer-${crypto.randomUUID()}`);
   const [targetOrigin, setTargetOrigin] = useState("");
   const [result, setResult] = useState<ReferenceRunResult>();
@@ -160,6 +163,9 @@ export default function SubmitRunPage() {
         },
         idempotencyKey,
       );
+
+      // Clear draft on successful submission
+      clearDraft();
 
       // Start polling for results
       await startPolling(submitResult.run.id);
